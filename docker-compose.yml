@@ -7,5 +7,6 @@ services:
     image: kardiachain/kai-watcher
     container_name: "kai-watcher"
     command: "cmd"
+    restart: always
     volumes:
       - .env:/go/bin/.env
