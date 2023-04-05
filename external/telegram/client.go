@@ -32,7 +32,8 @@ func NewClient(cfg Config) (Client, error) {
 
 func (c *client) Send(msg string) error {
 	//finalMsg := tgAPI.EscapeText(tgAPI.ModeHTML, msg)
-	message := tgAPI.NewMessage(-873461799, msg)
+	//message := tgAPI.NewMessage(-873461799, msg)
+	message := tgAPI.NewMessage(-973926577, msg)
 	message.ParseMode = tgAPI.ModeMarkdown
 	message.DisableWebPagePreview = true
 

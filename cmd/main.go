@@ -5,7 +5,6 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/ngdlong91/kai-watcher/watcher/staking"
 	"github.com/ngdlong91/kai-watcher/watcher/validator"
-	"github.com/ngdlong91/kai-watcher/watcher/whale"
 	"go.uber.org/zap"
 	"os"
 	"os/signal"
@@ -77,7 +76,7 @@ func main() {
 
 	go validator.WatchValidators(ctx, gCfg, 5*time.Second)
 	go staking.WatchStakingSMC(ctx, gCfg, 5*time.Second)
-	go whale.WatchWhaleTransaction(ctx, gCfg, 5*time.Second)
+	//go whale.WatchWhaleTransaction(ctx, gCfg, 5*time.Second)
 
 	<-waitExit
 	logger.Info("Stopped")

@@ -20,6 +20,7 @@ package kardia
 
 import (
 	"context"
+	"github.com/kardiachain/go-kardia/lib/abi"
 	"math/big"
 )
 
@@ -45,4 +46,7 @@ type Node interface {
 	IValidator
 
 	DecodeInputData(to string, input string) (*FunctionCall, error)
+	UnpackLog(log *Log, a *abi.ABI) (*Log, error)
+	ValidatorABI() abi.ABI
+	StakingABI() abi.ABI
 }

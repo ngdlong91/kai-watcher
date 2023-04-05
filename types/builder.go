@@ -15,12 +15,12 @@ func Builder() *builder {
 
 func (b *builder) Validator(v *kardia.Validator) Validator {
 	validator := Validator{
-		OwnerAddress:       v.Signer.Hex(),
-		SmcAddress:         v.SMCAddress.Hex(),
-		Name:               utils.Uint8ToString(v.Name),
-		IsJailed:           v.Jailed,
-		MissedBlockCounter: v.SigningInfo.MissedBlockCounter.Uint64(),
-		JailedUntil:        v.SigningInfo.JailedUntil.Uint64(),
+		OwnerAddress: v.Signer.Hex(),
+		SmcAddress:   v.SMCAddress.Hex(),
+		Name:         utils.Uint8ToString(v.Name),
+		IsJailed:     v.Jailed,
+		//MissedBlockCounter: v.SigningInfo.MissedBlockCounter.Uint64(),
+		//JailedUntil:        v.SigningInfo.JailedUntil.Uint64(),
 	}
 	return validator
 }

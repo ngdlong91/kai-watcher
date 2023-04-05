@@ -113,16 +113,14 @@ func (w *watcher) Run(ctx context.Context) error {
 		return nil
 	}
 	w.currentBlockHeight = latestBlockNumber
-	lgr.Info("------------------------1")
 	block, err := w.node.BlockByHeight(ctx, latestBlockNumber)
 	if err != nil {
 		return err
 	}
 
-	lgr.Info("Inspect block", zap.Uint64("NumTxs", block.NumTxs))
 	for _, tx := range block.Txs {
 		// Tx Value in decimal
-		lgr.Info("Process tx with value", zap.String("Value", tx.Value), zap.String("hash", tx.Hash))
+
 		txValue := utils.ToDecimal(tx.Value, 18)
 		var alertMsg string
 		if txValue.Cmp(w.levelFourLimit) >= 0 {
@@ -134,8 +132,8 @@ func (w *watcher) Run(ctx context.Context) error {
 		} else if txValue.Cmp(w.levelOneLimit) >= 0 {
 			alertMsg = newLevelOneAlert(tx)
 		}
-		lgr.Info("Send telegram with message", zap.String("Alert", alertMsg))
 		if alertMsg != "" {
+			lgr.Info("Process tx with value", zap.String("Value", tx.Value), zap.String("hash", tx.Hash))
 			if err := w.alert.Send(alertMsg); err != nil {
 				return err
 			}

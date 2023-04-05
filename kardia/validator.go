@@ -73,24 +73,24 @@ func (n *node) Validator(ctx context.Context, validatorSMCAddress string) (*Vali
 	}
 
 	valInfo.SMCAddress = common.HexToAddress(validatorSMCAddress)
-
-	commission, err := n.getValidatorCommission(ctx, validatorSMCAddress)
-	if err != nil {
-		return nil, err
-	}
-	valInfo.Commission = commission
-
-	signingInfo, err := n.getSigningInfo(ctx, validatorSMCAddress)
-	if err != nil {
-		return nil, err
-	}
-	valInfo.SigningInfo = signingInfo
-
-	delegators, err := n.getDelegators(ctx, validatorSMCAddress)
-	if err != nil {
-		return nil, err
-	}
-	valInfo.Delegators = delegators
+	//
+	//commission, err := n.getValidatorCommission(ctx, validatorSMCAddress)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//valInfo.Commission = commission
+	//
+	//signingInfo, err := n.getSigningInfo(ctx, validatorSMCAddress)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//valInfo.SigningInfo = signingInfo
+	//
+	//delegators, err := n.getDelegators(ctx, validatorSMCAddress)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//valInfo.Delegators = delegators
 
 	return &valInfo, nil
 }

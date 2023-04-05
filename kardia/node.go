@@ -122,6 +122,14 @@ func (n *node) setupSMC() error {
 	return nil
 }
 
+func (n *node) ValidatorABI() abi.ABI {
+	return *n.validatorSMC.Abi
+}
+
+func (n *node) StakingABI() abi.ABI {
+	return *n.stakingSMC.Abi
+}
+
 func (n *node) IsAlive() bool {
 	return true
 }
