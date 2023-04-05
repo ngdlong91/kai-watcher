@@ -6,6 +6,6 @@ services:
       context: .
     image: kardiachain/kai-watcher
     container_name: "kai-watcher"
-    command: "cmd"
+    command: "ticker"
     volumes:
       - .env:/go/bin/.env
