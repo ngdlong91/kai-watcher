@@ -40,3 +40,13 @@ func HumanizeCurrency(value string) string {
 	humanizeValue := humanize.FormatFloat("#,###.##", valueF64)
 	return humanizeValue
 }
+
+func ValidatorName(data [32]byte) string {
+	var name []byte
+	for _, b := range data {
+		if b != 0 {
+			name = append(name, b)
+		}
+	}
+	return string(name)
+}

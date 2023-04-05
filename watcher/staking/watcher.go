@@ -3,7 +3,10 @@ package staking
 
 import (
 	"context"
+	"fmt"
 	"github.com/ngdlong91/kai-watcher/cfg"
+	"github.com/ngdlong91/kai-watcher/utils"
+	"github.com/shopspring/decimal"
 	"strings"
 	"time"
 
@@ -11,17 +14,15 @@ import (
 
 	"github.com/ngdlong91/kai-watcher/external/telegram"
 	"github.com/ngdlong91/kai-watcher/kardia"
-
-	"github.com/ngdlong91/kai-watcher/types"
 )
 
 type watcher struct {
 	node               kardia.Node
-	stakingAddress     string
 	alert              telegram.Client
 	currentBlockHeight uint64
 	validators         []*kardia.Validator
 	lastFetch          int64
+	limit              decimal.Decimal
 	logger             *zap.Logger
 }
 
@@ -38,11 +39,15 @@ func NewWatcher(cfg Config) (*watcher, error) {
 	if err != nil {
 		return nil, err
 	}
+	limit, err := decimal.NewFromString(cfg.ValidatorLimit)
+	if err != nil {
+		return nil, err
+	}
 	watcher := &watcher{
-		node:           node,
-		alert:          alert,
-		stakingAddress: cfg.StakingAddress,
-		logger:         cfg.Logger,
+		node:   node,
+		alert:  alert,
+		limit:  limit,
+		logger: cfg.Logger,
 	}
 
 	return watcher, nil
@@ -54,7 +59,7 @@ func WatchStakingSMC(ctx context.Context, cfg cfg.EnvConfig, interval time.Durat
 		URL:            cfg.KardiaTrustedNodes[0],
 		Logger:         lgr,
 		AlertToken:     cfg.TelegramToken,
-		StakingAddress: cfg.StakingAddress,
+		ValidatorLimit: cfg.ValidatorLimit,
 	}
 	watcher, err := NewWatcher(sCfg)
 	if err != nil {
@@ -84,7 +89,7 @@ func (w *watcher) Run(ctx context.Context) error {
 		}
 		w.validators = validators
 		w.lastFetch = time.Now().Unix()
-		w.logger.Info("Validator info", zap.Any("va", validators))
+		w.logger.Info("Validator info", zap.Int("ValidatorSize", len(validators)))
 	}
 
 	//todo: change get latest block number to subscribe newHeads event
@@ -108,16 +113,12 @@ func (w *watcher) Run(ctx context.Context) error {
 		return err
 	}
 
-	b := types.Builder()
 	isSkip := true
 	var validator *kardia.Validator
 	for id, r := range block.Receipts {
-		lgr.Info("REceipt", zap.Any("r", r))
 		for _, l := range r.Logs {
-			lgr.Info("L", zap.Any("l", l))
+
 			for vid, v := range w.validators {
-				lgr.Info("V", zap.Any("v", v))
-				lgr.Info("VSMC", zap.Any("SMC", v.SMCAddress.String()))
 				if strings.ToLower(l.Address) == strings.ToLower(v.SMCAddress.String()) {
 					isSkip = false
 					validator = w.validators[vid]
@@ -133,25 +134,32 @@ func (w *watcher) Run(ctx context.Context) error {
 				lgr.Error("tx nil")
 				continue
 			}
-			transaction := b.Transaction(tx)
+
+			abi := w.node.ValidatorABI()
 			//// Get decode data of smc call
-			fc, err := w.node.DecodeInputData(l.Address, l.Data)
+			unpackedLog, err := w.node.UnpackLog(&l, &abi)
 			if err != nil {
 				lgr.Error("Cannot decode input", zap.Error(err))
 				return err
 			}
 
+			//lgr.Info("UnpackedLog", zap.Any("L", unpackedLog))
+
 			var alertMsg string
-			switch fc.MethodName {
+			switch unpackedLog.MethodName {
 			case DelegateMethod:
-				alertMsg = newDelegateAlert(transaction, validator)
+				delegateAmount := utils.ToDecimal(fmt.Sprintf("%v", l.Arguments["_amount"]), 18)
+				if delegateAmount.Cmp(w.limit) > 0 {
+					alertMsg = newDelegateAlert(unpackedLog, validator)
+				}
+
 			case UndelegatedMethod:
-				alertMsg = newUndelegatedAlert(transaction, validator)
-			}
-			if fc.MethodName == DelegateMethod {
+				undelegateAmount := utils.ToDecimal(fmt.Sprintf("%v", l.Arguments["_amount"]), 18)
+				if undelegateAmount.Cmp(w.limit) > 0 {
+					alertMsg = newUndelegatedAlert(unpackedLog, validator)
+				}
 
 			}
-
 			if alertMsg != "" {
 				if err := w.alert.Send(alertMsg); err != nil {
 					return err

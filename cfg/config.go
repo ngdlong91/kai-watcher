@@ -35,6 +35,7 @@ type EnvConfig struct {
 	LevelTwoLimit   string
 	LevelThreeLimit string
 	LevelFourLimit  string
+	ValidatorLimit  string
 
 	// SentryConfiguration
 	SentryDSN string
@@ -104,6 +105,8 @@ func Load() (EnvConfig, error) {
 		LevelTwoLimit:   os.Getenv("LEVEL_TWO_LIMIT"),
 		LevelThreeLimit: os.Getenv("LEVEL_THREE_LIMIT"),
 		LevelFourLimit:  os.Getenv("LEVEL_FOUR_LIMIT"),
+
+		ValidatorLimit: os.Getenv("VALIDATOR_LIMIT"),
 
 		SentryDSN:     os.Getenv("SENTRY_DNS"),
 		TelegramToken: os.Getenv("TELEGRAM_TOKEN"),

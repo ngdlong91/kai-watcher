@@ -7,12 +7,12 @@ import (
 type Config struct {
 	URL            string
 	Logger         *zap.Logger
-	StakingAddress string
+	ValidatorLimit string
 
 	AlertToken string
 }
 
 const (
-	DelegateMethod    = "delegate"
-	UndelegatedMethod = "undelegated"
+	DelegateMethod    = "Delegate"
+	UndelegatedMethod = "Undelegate"
 )

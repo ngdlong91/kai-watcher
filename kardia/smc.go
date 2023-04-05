@@ -4,8 +4,6 @@ package kardia
 import (
 	"encoding/hex"
 	"fmt"
-	"go.uber.org/zap"
-
 	"math/big"
 	"reflect"
 	"strconv"
@@ -53,27 +51,23 @@ func (n *node) UnpackLog(log *Log, smcABI *abi.ABI) (*Log, error) {
 
 // UnpackLogIntoMap unpacks a retrieved log into the provided map.
 func unpackLogIntoMap(a *abi.ABI, out map[string]interface{}, eventName string, log *Log) error {
-	lgr, _ := zap.NewDevelopment()
 	data, err := hex.DecodeString(log.Data)
 	if err != nil {
 		return err
 	}
-
 	if len(data) > 0 {
 		if err := a.UnpackIntoMap(out, eventName, data); err != nil {
 			return err
 		}
 	}
-	lgr.Info("Event Name", zap.String("Event", eventName), zap.Any("Inputs", a.Events[eventName].Inputs))
+
 	// unpacking indexed arguments
 	var indexed abi.Arguments
 	for _, arg := range a.Events[eventName].Inputs {
-		lgr.Info("Args", zap.Any("Arg", arg))
 		if arg.Indexed {
 			indexed = append(indexed, arg)
 		}
 	}
-	lgr.Info("Indexed", zap.Any("IndexedSize", len(indexed)), zap.Any("Indexed", indexed))
 
 	topicSize := len(log.Topics)
 	if topicSize <= 1 {
@@ -83,7 +77,6 @@ func unpackLogIntoMap(a *abi.ABI, out map[string]interface{}, eventName string, 
 	for i, topic := range log.Topics[1:] { // exclude the eventID (log.Topic[0])
 		topics[i] = common.HexToHash(topic)
 	}
-	lgr.Info("Topics", zap.Any("TopicSize", len(topics)), zap.Any("Topics", topics))
 	return abi.ParseTopicsIntoMap(out, indexed, topics)
 }
 
@@ -104,14 +97,13 @@ func (n *node) DecodeInputData(to string, input string) (*FunctionCall, error) {
 	)
 	// check if the to address is staking contract, then we search for staking method in staking contract ABI
 	if n.stakingSMC.ContractAddress.Equal(common.HexToAddress(to)) {
-		fmt.Println("--------using stakingABI")
+
 		a = n.stakingSMC.Abi
 		method, err = n.stakingSMC.Abi.MethodById(sig)
 		if err != nil {
 			return nil, err
 		}
 	} else { // otherwise, search for a validator method
-		fmt.Println("--------using validatorABI")
 		a = n.validatorSMC.Abi
 		method, err = n.validatorSMC.Abi.MethodById(sig)
 		if err != nil {

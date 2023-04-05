@@ -28,7 +28,7 @@ func TestNode_Validators(t *testing.T) {
 	}
 }
 
-func TestNode_DecodeInputData(t *testing.T) {
+func TestNode_Undelegate(t *testing.T) {
 
 	lgr, _ := zap.NewDevelopment()
 	ctx := context.Background()
@@ -39,6 +39,29 @@ func TestNode_DecodeInputData(t *testing.T) {
 	assert.Nil(t, err)
 	lgr.Info("Tx", zap.Any("tx", tx))
 	r, err := node.GetTransactionReceipt(ctx, "0x8fe7d8112cd2acc5c5dae1c9faab0d84d9baa742dff5383c1d7fac281b92662a")
+	assert.Nil(t, err)
+	for _, l := range r.Logs {
+		abi := validatorABI
+		lgr.Info("Log", zap.Any("l", l))
+		if l.Address == "0xf151515fa44527E203Cb457086cDa630da80c4b8" {
+			unpackedLog, err := node.UnpackLog(&l, &abi)
+			assert.Nil(t, err)
+			lgr.Info("unpackedLog", zap.Any("unpackedLog", unpackedLog))
+		}
+	}
+
+}
+
+func TestNode_Delegate(t *testing.T) {
+	lgr, _ := zap.NewDevelopment()
+	ctx := context.Background()
+	node, err := SetupNodeClient()
+	assert.Nil(t, err)
+	validatorABI := node.ValidatorABI()
+	tx, err := node.GetTransaction(ctx, "0xfa2c9f3c9708f8de0c972a2e2d4f0f7a8f954f51e5414a9056b1d4582360f87f")
+	assert.Nil(t, err)
+	lgr.Info("Tx", zap.Any("tx", tx))
+	r, err := node.GetTransactionReceipt(ctx, "0xfa2c9f3c9708f8de0c972a2e2d4f0f7a8f954f51e5414a9056b1d4582360f87f")
 	assert.Nil(t, err)
 	for _, l := range r.Logs {
 		abi := validatorABI
