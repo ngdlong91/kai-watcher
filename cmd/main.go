@@ -71,8 +71,8 @@ func main() {
 		}
 	}()
 
-	//go watchValidators(ctx, 5*time.Second)
-	//go watchStakingSMC(ctx, 5*time.Second)
+	go WatchValidators(ctx, 5*time.Second)
+	go WatchStakingSMC(ctx, 5*time.Second)
 	go WatchWhaleTransaction(ctx, 5*time.Second)
 
 	<-waitExit
