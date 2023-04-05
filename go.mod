@@ -7,6 +7,7 @@ require (
 	github.com/getsentry/sentry-go v0.9.0
 	github.com/go-co-op/gocron v0.5.0
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
+	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1 // indirect
 	github.com/golang/snappy v0.0.3-0.20201103224600-674baa8c7fc3 // indirect
 	github.com/joho/godotenv v1.3.0
 	github.com/kardiachain/explorer-backend v0.0.0-20210111040211-4c591ea80d63

@@ -98,8 +98,6 @@ func (w *watcher) Run(ctx context.Context) error {
 			alertMsg = newLevelTwoAlert(tx)
 		} else if txValue.Cmp(w.levelOneLimit) >= 0 {
 			alertMsg = newLevelOneAlert(tx)
-		} else {
-			alertMsg = newLevelOneAlert(tx)
 		}
 		lgr.Info("Send telegram with message", zap.String("Alert", alertMsg))
 		if alertMsg != "" {
