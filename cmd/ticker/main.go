@@ -2,14 +2,13 @@ package main
 
 import (
 	"context"
+	"github.com/joho/godotenv"
+	"go.uber.org/zap"
 	"os"
 	"os/signal"
 	"runtime"
 	"syscall"
 	"time"
-
-	"github.com/joho/godotenv"
-	"go.uber.org/zap"
 
 	"github.com/ngdlong91/kai-watcher/cfg"
 	"github.com/ngdlong91/kai-watcher/external/alert"
@@ -72,8 +71,9 @@ func main() {
 		}
 	}()
 
-	go watchValidators(ctx, 5*time.Second)
-	go watchStakingSMC(ctx, 5*time.Second)
+	//go watchValidators(ctx, 5*time.Second)
+	//go watchStakingSMC(ctx, 5*time.Second)
+	go watchWhaleTransaction(ctx, 5*time.Second)
 
 	<-waitExit
 	logger.Info("Stopped")

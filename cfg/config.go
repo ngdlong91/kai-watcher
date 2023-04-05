@@ -30,6 +30,11 @@ type EnvConfig struct {
 	StorageMaxConn int
 	StorageIsFlush bool
 
+	LevelOneLimit   string
+	LevelTwoLimit   string
+	LevelThreeLimit string
+	LevelFourLimit  string
+
 	// SentryConfiguration
 	SentryDSN string
 
@@ -91,6 +96,11 @@ func Load() (EnvConfig, error) {
 		StorageMinConn: storageMinConn,
 		StorageMaxConn: storageMaxConn,
 		StorageIsFlush: storageIsFLush,
+
+		LevelOneLimit:   os.Getenv("LEVEL_ONE_LIMIT"),
+		LevelTwoLimit:   os.Getenv("LEVEL_TWO_LIMIT"),
+		LevelThreeLimit: os.Getenv("LEVEL_THREE_LIMIT"),
+		LevelFourLimit:  os.Getenv("LEVEL_FOUR_LIMIT"),
 
 		SentryDSN:     os.Getenv("SENTRY_DNS"),
 		TelegramToken: os.Getenv("TELEGRAM_TOKEN"),

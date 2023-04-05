@@ -9,6 +9,16 @@ import (
 	"github.com/kardiachain/go-kardia/types"
 )
 
+const (
+	// BloomByteLength represents the number of bytes used in a header log bloom.
+	BloomByteLength = 256
+
+	// BloomBitLength represents the number of bits used in a header log bloom.
+	BloomBitLength = 8 * BloomByteLength
+)
+
+type Bloom [BloomByteLength]byte
+
 type Block struct {
 	Hash   string `json:"hash,omitempty" bson:"hash"`
 	Height uint64 `json:"height,omitempty" bson:"height"`
@@ -25,7 +35,7 @@ type Block struct {
 
 	DataHash     string `json:"dataHash,omitempty" bson:"dataHash"`
 	ReceiptsRoot string `json:"receiptsRoot,omitempty" bson:"receiptsRoot"`
-	LogsBloom    string `json:"logsBloom,omitempty" bson:"logsBloom"`
+	LogsBloom    Bloom  `json:"logsBloom,omitempty" bson:"logsBloom"`
 
 	ValidatorHash     string `json:"validatorHash,omitempty" bson:"validatorHash"`
 	NextValidatorHash string `json:"nextValidatorHash,omitempty" bson:"nextValidatorHash"` // validators for the next block

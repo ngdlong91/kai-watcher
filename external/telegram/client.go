@@ -29,7 +29,8 @@ func NewClient(cfg Config) (Client, error) {
 }
 
 func (c *client) Send(msg string) error {
-	message := tgAPI.NewMessage(-467712071, msg)
+	message := tgAPI.NewMessage(-873461799, msg)
+
 	if _, err := c.bot.Send(message); err != nil {
 		return err
 	}
