@@ -1,4 +1,4 @@
-FROM golang:1.17.6-alpine
+FROM golang:1.19.4-alpine
 RUN apk update && apk add build-base cmake gcc git
 WORKDIR /go/src/github/kardiachain/kai-watcher
 ADD . .
