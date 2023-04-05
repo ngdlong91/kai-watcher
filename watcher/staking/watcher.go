@@ -3,6 +3,8 @@ package staking
 
 import (
 	"context"
+	"github.com/ngdlong91/kai-watcher/cfg"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -40,6 +42,34 @@ func NewWatcher(cfg Config) (*watcher, error) {
 	}
 
 	return watcher, nil
+}
+
+func WatchStakingSMC(ctx context.Context, cfg cfg.EnvConfig, interval time.Duration) {
+	lgr := cfg.Logger.With(zap.String("Watcher", "Staking"))
+	sCfg := Config{
+		URL:            cfg.KardiaTrustedNodes[0],
+		Logger:         lgr,
+		AlertToken:     cfg.TelegramToken,
+		StakingAddress: cfg.StakingAddress,
+	}
+	watcher, err := NewWatcher(sCfg)
+	if err != nil {
+		lgr.Error("cannot create watcher", zap.Error(err))
+		panic(err)
+	}
+	lgr.Info("Start staking watcher")
+	t := time.NewTicker(interval)
+	defer t.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			if err := watcher.Run(ctx); err != nil {
+				continue
+			}
+		}
+	}
 }
 
 func (w *watcher) Run(ctx context.Context) error {

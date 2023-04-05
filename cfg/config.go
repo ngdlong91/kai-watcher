@@ -2,6 +2,7 @@
 package cfg
 
 import (
+	"go.uber.org/zap"
 	"os"
 	"strconv"
 	"strings"
@@ -40,6 +41,8 @@ type EnvConfig struct {
 
 	// Telegram token
 	TelegramToken string
+
+	Logger *zap.Logger
 }
 
 func Load() (EnvConfig, error) {
