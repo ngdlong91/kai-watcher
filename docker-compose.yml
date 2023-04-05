@@ -1,0 +1,11 @@
+version: '3.4'
+
+services:
+  backend:
+    build:
+      context: .
+    image: kardiachain/kai-watcher
+    container_name: "kai-watcher"
+    command: "cmd"
+    volumes:
+      - .env:/go/bin/.env
