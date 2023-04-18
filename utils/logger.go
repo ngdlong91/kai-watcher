@@ -62,3 +62,11 @@ func NewLogger(config LoggerConfig) (*zap.Logger, error) {
 
 	return logCfg.Build(sentryOpts)
 }
+
+func LoggerForPackage(lgr *zap.Logger, packageName string) *zap.Logger {
+	return lgr.With(zap.String("package", packageName))
+}
+
+func LoggerForMethod(lgr *zap.Logger, method string) *zap.Logger {
+	return lgr.With(zap.String("method", method))
+}

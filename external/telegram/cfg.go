@@ -6,6 +6,7 @@ import (
 )
 
 type Config struct {
-	Token  string
-	Logger *zap.Logger
+	Token   string
+	GroupID int64
+	Logger  *zap.Logger
 }

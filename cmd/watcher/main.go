@@ -2,19 +2,19 @@ package main
 
 import (
 	"context"
-	"github.com/joho/godotenv"
-	"github.com/ngdlong91/kai-watcher/watcher/staking"
-	"github.com/ngdlong91/kai-watcher/watcher/whale"
-	"go.uber.org/zap"
 	"os"
 	"os/signal"
 	"runtime"
 	"syscall"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/ngdlong91/kai-watcher/cfg"
 	"github.com/ngdlong91/kai-watcher/external/alert"
 	"github.com/ngdlong91/kai-watcher/utils"
+	"github.com/ngdlong91/kai-watcher/watcher/staking"
+	"github.com/ngdlong91/kai-watcher/watcher/whale"
 )
 
 var (
@@ -23,9 +23,6 @@ var (
 )
 
 func preload() {
-	if err := godotenv.Load(); err != nil {
-		panic(err.Error())
-	}
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	tempCfg, err := cfg.Load()

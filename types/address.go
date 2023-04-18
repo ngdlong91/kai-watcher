@@ -1,29 +1,42 @@
 package types
 
-type Address struct {
-	Hash         string  `json:"hash" bson:"hash"`
-	Name         string  `json:"name" bson:"name"`
-	Balance      string  `json:"balance" bson:"balance"`
-	BalanceFloat float64 `bson:"balanceFloat"`
+const (
+	AddressTypeWallet  = 1
+	AddressTypeKRC20   = 2
+	AddressTypeKRC721  = 3
+	AddressTypeStaking = 4
+)
 
-	Rank uint64 `json:"rank" bson:"rank"`
+type Address struct {
+	Address       string  `json:"address" bson:"address,omitempty"`
+	Rank          uint64  `json:"rank,omitempty"`
+	BalanceFloat  float64 `json:"-" bson:"balanceFloat,omitempty"`        // low precise balance for sorting purposes
+	BalanceString string  `json:"balance" bson:"balanceString,omitempty"` // high precise balance for API
+	Name          string  `json:"name" bson:"name,omitempty"`             // alias of an address
+	Info          string  `json:"info,omitempty" bson:"info,omitempty"`   // additional info of this address
+	Logo          string  `json:"logo" bson:"logo,omitempty"`
+
+	// Token
+	TokenName   string `json:"tokenName" bson:"tokenName,omitempty"`
+	TokenSymbol string `json:"tokenSymbol" bson:"tokenSymbol,omitempty"`
+	Decimals    int64  `json:"decimals" bson:"decimals,omitempty"`
+	TotalSupply string `json:"totalSupply" bson:"totalSupply,omitempty"`
 
 	// SMC
-	IsContract   bool   `json:"isContract" bson:"isContract"`
-	OwnerAddress string `json:"ownerAddress" bson:"ownerAddress"`
+	IsContract   bool   `json:"isContract" bson:"isContract,omitempty"`
+	KrcTypes     string `json:"type" bson:"type,omitempty"`
+	OwnerAddress string `json:"ownerAddress,omitempty" bson:"ownerAddress,omitempty"`
+
+	// Stats
+	TxCount         int `json:"txCount,omitempty" bson:"txCount,omitempty"`
+	HolderCount     int `json:"holderCount,omitempty" bson:"holderCount,omitempty"`
+	InternalTxCount int `json:"internalTxCount,omitempty" bson:"internalTxCount,omitempty"`
+	TokenTxCount    int `json:"tokenTxCount,omitempty" bson:"tokenTxCount,omitempty"`
+
+	UpdatedAt int64 `json:"updatedAt" bson:"updatedAt,omitempty"`
 }
 
-func (o *Address) SetBalanceInFloat(b float64) {
-	o.BalanceFloat = b
-}
-
-type SMC struct {
-	Hash            string   `json:"hash" bson:"hash"`
-	OwnerAddress    string   `json:"ownerAddress" bson:"ownerAddress"`
-	ErcTypes        []string `json:"ercTypes" bson:"ercTypes"`
-	Interfaces      []string `json:"interfaces" bson:"interfaces"`
-	TxCount         int      `json:"txCount" bson:"txCount"`
-	HolderCount     int      `json:"holderCount" bson:"holderCount"`
-	InternalTxCount int      `json:"internalTxCount" bson:"internalTxCount"`
-	TokenTxCount    int      `json:"tokenTxCount" bson:"tokenTxCount"`
+type UpdateAddress struct {
+	Address string `json:"address"`
+	Name    string `json:"name"`
 }

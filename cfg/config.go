@@ -2,10 +2,12 @@
 package cfg
 
 import (
-	"go.uber.org/zap"
+	"github.com/joho/godotenv"
 	"os"
 	"strconv"
 	"strings"
+
+	"go.uber.org/zap"
 )
 
 const (
@@ -42,11 +44,23 @@ type EnvConfig struct {
 
 	// Telegram token
 	TelegramToken string
+	TelegramGroup int64
+
+	CronFetchDelegators string
 
 	Logger *zap.Logger
 }
 
 func Load() (EnvConfig, error) {
+
+	if err := godotenv.Load(); err != nil {
+		// server might not work properly if env is not loaded
+		panic(err)
+	}
+
+	if os.Getenv("SERVER_MODE") == ModeDev {
+		godotenv.Load("dev.env")
+	}
 
 	var (
 		kardiaTrustedNodes []string
@@ -83,6 +97,12 @@ func Load() (EnvConfig, error) {
 		storageIsFLush = false
 	}
 
+	telegramGroupIDStr := os.Getenv("TELEGRAM_GROUP")
+	telegramGroup, err := strconv.ParseInt(telegramGroupIDStr, 10, 64)
+	if err != nil {
+		telegramGroup = 0
+	}
+
 	cfg := EnvConfig{
 		ServerMode: os.Getenv("SERVER_MODE"),
 		Port:       os.Getenv("PORT"),
@@ -110,6 +130,9 @@ func Load() (EnvConfig, error) {
 
 		SentryDSN:     os.Getenv("SENTRY_DNS"),
 		TelegramToken: os.Getenv("TELEGRAM_TOKEN"),
+		TelegramGroup: telegramGroup,
+
+		CronFetchDelegators: os.Getenv("CRON_FETCH_DELEGATORS"),
 	}
 
 	return cfg, nil

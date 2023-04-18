@@ -2,17 +2,19 @@ package whale
 
 import (
 	"context"
-	"github.com/ngdlong91/kai-watcher/cfg"
-	"github.com/ngdlong91/kai-watcher/external/telegram"
-	"github.com/ngdlong91/kai-watcher/kardia"
-	"github.com/ngdlong91/kai-watcher/utils"
+	"github.com/ngdlong91/kai-watcher/kclient"
+	"time"
+
 	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
-	"time"
+
+	"github.com/ngdlong91/kai-watcher/cfg"
+	"github.com/ngdlong91/kai-watcher/external/telegram"
+	"github.com/ngdlong91/kai-watcher/utils"
 )
 
 type watcher struct {
-	node               kardia.Node
+	node               *kclient.Node
 	levelOneLimit      decimal.Decimal
 	levelTwoLimit      decimal.Decimal
 	levelThreeLimit    decimal.Decimal
@@ -56,7 +58,7 @@ func WatchWhaleTransaction(ctx context.Context, cfg cfg.EnvConfig, interval time
 }
 
 func NewWatcher(cfg Config) (*watcher, error) {
-	node, err := kardia.NewNode(cfg.URL, cfg.Logger)
+	node, err := kclient.NewNode(cfg.URL, cfg.Logger)
 	if err != nil {
 		return nil, err
 	}

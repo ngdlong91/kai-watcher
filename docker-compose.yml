@@ -10,3 +10,20 @@ services:
     restart: always
     volumes:
       - .env:/go/bin/.env
+  db:
+    image: postgres:14
+    restart: always
+    container_name: 'postgres'
+    command: postgres -c 'max_connections=200'
+    environment:
+      POSTGRES_PASSWORD: '123456'
+      POSTGRES_USER: 'postgres'
+      POSTGRES_HOST_AUTH_METHOD: 'trust'
+    ports:
+      - 5432:5432
+  redis:
+    container_name: watcher-redis
+    image: redis:latest
+    command: /bin/sh -c "redis-server --requirepass 123456"
+    #ports:
+    #  - 6379:6379
