@@ -1,0 +1,1 @@
+drop index delegators_staked_amount_index;
