@@ -2,6 +2,7 @@
 package telegram
 
 import (
+	"fmt"
 	tgAPI "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
 )
@@ -17,6 +18,7 @@ type client struct {
 }
 
 func NewClient(cfg Config) (Client, error) {
+	fmt.Println("Config", cfg)
 	bot, err := tgAPI.NewBotAPI(cfg.Token)
 	if err != nil {
 		return nil, err
@@ -31,6 +33,7 @@ func NewClient(cfg Config) (Client, error) {
 }
 
 func (c *client) Send(msg string) error {
+	fmt.Println("New message to group id", c.groupID)
 	message := tgAPI.NewMessage(c.groupID, msg)
 	message.ParseMode = tgAPI.ModeMarkdown
 	message.DisableWebPagePreview = true

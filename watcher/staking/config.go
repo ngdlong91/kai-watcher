@@ -10,6 +10,7 @@ type Config struct {
 	ValidatorLimit string
 
 	AlertToken string
+	AlertTo    int64
 }
 
 const (

@@ -33,8 +33,9 @@ func NewWatcher(cfg Config) (*watcher, error) {
 		return nil, err
 	}
 	alertCfg := telegram.Config{
-		Token:  cfg.AlertToken,
-		Logger: cfg.Logger,
+		Token:   cfg.AlertToken,
+		Logger:  cfg.Logger,
+		GroupID: cfg.AlertTo,
 	}
 	alert, err := telegram.NewClient(alertCfg)
 	if err != nil {
@@ -60,6 +61,7 @@ func WatchStakingSMC(ctx context.Context, cfg cfg.EnvConfig, interval time.Durat
 		URL:            cfg.KardiaTrustedNodes[0],
 		Logger:         lgr,
 		AlertToken:     cfg.TelegramToken,
+		AlertTo:        cfg.TelegramGroup,
 		ValidatorLimit: cfg.ValidatorLimit,
 	}
 	watcher, err := NewWatcher(sCfg)
@@ -91,6 +93,9 @@ func (w *watcher) Run(ctx context.Context) error {
 		w.validators = validators
 		w.lastFetch = time.Now().Unix()
 		w.logger.Info("Validator info", zap.Int("ValidatorSize", len(validators)))
+		for _, v := range validators {
+			w.logger.Info("VInfo", zap.Any("V", v))
+		}
 	}
 
 	lgr := w.logger
@@ -117,7 +122,6 @@ func (w *watcher) Run(ctx context.Context) error {
 	var validator *types.Validator
 	for id, r := range block.Receipts {
 		for _, l := range r.Logs {
-
 			for vid, v := range w.validators {
 				if strings.ToLower(l.Address) == strings.ToLower(v.SMCAddress) {
 					isSkip = false
@@ -143,7 +147,7 @@ func (w *watcher) Run(ctx context.Context) error {
 				return err
 			}
 
-			//lgr.Info("UnpackedLog", zap.Any("L", unpackedLog))
+			lgr.Info("UnpackedLog", zap.Any("L", unpackedLog))
 
 			var alertMsg string
 			switch unpackedLog.MethodName {

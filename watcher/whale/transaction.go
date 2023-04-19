@@ -30,6 +30,7 @@ func WatchWhaleTransaction(ctx context.Context, cfg cfg.EnvConfig, interval time
 		URL:             cfg.KardiaTrustedNodes[0],
 		Logger:          lgr,
 		AlertToken:      cfg.TelegramToken,
+		AlertTo:         cfg.TelegramGroup,
 		LevelOneLimit:   cfg.LevelOneLimit,
 		LevelTwoLimit:   cfg.LevelTwoLimit,
 		LevelThreeLimit: cfg.LevelThreeLimit,
@@ -63,8 +64,9 @@ func NewWatcher(cfg Config) (*watcher, error) {
 		return nil, err
 	}
 	alertCfg := telegram.Config{
-		Token:  cfg.AlertToken,
-		Logger: cfg.Logger,
+		Token:   cfg.AlertToken,
+		GroupID: cfg.AlertTo,
+		Logger:  cfg.Logger,
 	}
 	cfg.Logger.Info("Watcher", zap.Any("Config", cfg))
 	alert, err := telegram.NewClient(alertCfg)

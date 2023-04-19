@@ -86,6 +86,7 @@ type RPCValidator struct {
 	Jailed                bool            `json:"jailed"`
 	DelegationShares      *big.Int        `json:"delegationShares"`
 	AccumulatedCommission *big.Int        `json:"accumulatedCommission"`
+	MinSelfDelegation     *big.Int        `json:"minSelfDelegation"`
 	UbdEntryCount         *big.Int        `json:"ubdEntryCount"`
 	UpdateTime            *big.Int        `json:"updateTime"`
 	Status                uint8           `json:"status"`

@@ -2,6 +2,7 @@
 package cfg
 
 import (
+	"fmt"
 	"github.com/joho/godotenv"
 	"os"
 	"strconv"
@@ -51,14 +52,12 @@ type EnvConfig struct {
 	Logger *zap.Logger
 }
 
+var serverMode = "dev"
+
 func Load() (EnvConfig, error) {
-
-	if err := godotenv.Load(); err != nil {
-		// server might not work properly if env is not loaded
-		panic(err)
-	}
-
-	if os.Getenv("SERVER_MODE") == ModeDev {
+	if serverMode == ModeProduction {
+		godotenv.Load()
+	} else {
 		godotenv.Load("dev.env")
 	}
 
@@ -98,8 +97,10 @@ func Load() (EnvConfig, error) {
 	}
 
 	telegramGroupIDStr := os.Getenv("TELEGRAM_GROUP")
+	fmt.Println("Telegram group ID", telegramGroupIDStr)
 	telegramGroup, err := strconv.ParseInt(telegramGroupIDStr, 10, 64)
 	if err != nil {
+		fmt.Println("err", err.Error())
 		telegramGroup = 0
 	}
 
