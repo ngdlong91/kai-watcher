@@ -2,6 +2,7 @@
 package telegram
 
 import (
+	"fmt"
 	tgAPI "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
 )
@@ -11,29 +12,29 @@ type Client interface {
 }
 
 type client struct {
-	lgr *zap.Logger
-	bot *tgAPI.BotAPI
+	lgr     *zap.Logger
+	bot     *tgAPI.BotAPI
+	groupID int64
 }
 
 func NewClient(cfg Config) (Client, error) {
-	//endpoint := fmt.Sprintf("%s&parse_mode=MarkdownV2", tgAPI.APIEndpoint)
-	//bot, err := tgAPI.NewBotAPIWithAPIEndpoint(cfg.Token, endpoint)
+	fmt.Println("Config", cfg)
 	bot, err := tgAPI.NewBotAPI(cfg.Token)
 	if err != nil {
 		return nil, err
 	}
 
 	c := &client{
-		lgr: cfg.Logger,
-		bot: bot,
+		lgr:     cfg.Logger,
+		bot:     bot,
+		groupID: cfg.GroupID,
 	}
 	return c, nil
 }
 
 func (c *client) Send(msg string) error {
-	//finalMsg := tgAPI.EscapeText(tgAPI.ModeHTML, msg)
-	message := tgAPI.NewMessage(-873461799, msg)
-	//message := tgAPI.NewMessage(-973926577, msg)
+	fmt.Println("New message to group id", c.groupID)
+	message := tgAPI.NewMessage(c.groupID, msg)
 	message.ParseMode = tgAPI.ModeMarkdown
 	message.DisableWebPagePreview = true
 

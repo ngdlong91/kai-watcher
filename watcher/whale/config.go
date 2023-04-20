@@ -13,4 +13,5 @@ type Config struct {
 	LevelFourLimit  string
 
 	AlertToken string
+	AlertTo    int64
 }

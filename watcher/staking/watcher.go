@@ -4,36 +4,38 @@ package staking
 import (
 	"context"
 	"fmt"
-	"github.com/ngdlong91/kai-watcher/cfg"
-	"github.com/ngdlong91/kai-watcher/utils"
-	"github.com/shopspring/decimal"
 	"strings"
 	"time"
 
+	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 
+	"github.com/ngdlong91/kai-watcher/cfg"
 	"github.com/ngdlong91/kai-watcher/external/telegram"
-	"github.com/ngdlong91/kai-watcher/kardia"
+	"github.com/ngdlong91/kai-watcher/kclient"
+	"github.com/ngdlong91/kai-watcher/types"
+	"github.com/ngdlong91/kai-watcher/utils"
 )
 
 type watcher struct {
-	node               kardia.Node
+	node               *kclient.Node
 	alert              telegram.Client
 	currentBlockHeight uint64
-	validators         []*kardia.Validator
+	validators         []*types.Validator
 	lastFetch          int64
 	limit              decimal.Decimal
 	logger             *zap.Logger
 }
 
 func NewWatcher(cfg Config) (*watcher, error) {
-	node, err := kardia.NewNode(cfg.URL, cfg.Logger)
+	node, err := kclient.NewNode(cfg.URL, cfg.Logger)
 	if err != nil {
 		return nil, err
 	}
 	alertCfg := telegram.Config{
-		Token:  cfg.AlertToken,
-		Logger: cfg.Logger,
+		Token:   cfg.AlertToken,
+		Logger:  cfg.Logger,
+		GroupID: cfg.AlertTo,
 	}
 	alert, err := telegram.NewClient(alertCfg)
 	if err != nil {
@@ -59,6 +61,7 @@ func WatchStakingSMC(ctx context.Context, cfg cfg.EnvConfig, interval time.Durat
 		URL:            cfg.KardiaTrustedNodes[0],
 		Logger:         lgr,
 		AlertToken:     cfg.TelegramToken,
+		AlertTo:        cfg.TelegramGroup,
 		ValidatorLimit: cfg.ValidatorLimit,
 	}
 	watcher, err := NewWatcher(sCfg)
@@ -90,9 +93,11 @@ func (w *watcher) Run(ctx context.Context) error {
 		w.validators = validators
 		w.lastFetch = time.Now().Unix()
 		w.logger.Info("Validator info", zap.Int("ValidatorSize", len(validators)))
+		for _, v := range validators {
+			w.logger.Info("VInfo", zap.Any("V", v))
+		}
 	}
 
-	//todo: change get latest block number to subscribe newHeads event
 	lgr := w.logger
 	latestBlockNumber, err := w.node.LatestBlockNumber(ctx)
 	if err != nil {
@@ -114,12 +119,11 @@ func (w *watcher) Run(ctx context.Context) error {
 	}
 
 	isSkip := true
-	var validator *kardia.Validator
+	var validator *types.Validator
 	for id, r := range block.Receipts {
 		for _, l := range r.Logs {
-
 			for vid, v := range w.validators {
-				if strings.ToLower(l.Address) == strings.ToLower(v.SMCAddress.String()) {
+				if strings.ToLower(l.Address) == strings.ToLower(v.SMCAddress) {
 					isSkip = false
 					validator = w.validators[vid]
 					break
@@ -137,13 +141,13 @@ func (w *watcher) Run(ctx context.Context) error {
 
 			abi := w.node.ValidatorABI()
 			//// Get decode data of smc call
-			unpackedLog, err := w.node.UnpackLog(&l, &abi)
+			unpackedLog, err := kclient.UnpackLog(&l, abi)
 			if err != nil {
 				lgr.Error("Cannot decode input", zap.Error(err))
 				return err
 			}
 
-			//lgr.Info("UnpackedLog", zap.Any("L", unpackedLog))
+			lgr.Info("UnpackedLog", zap.Any("L", unpackedLog))
 
 			var alertMsg string
 			switch unpackedLog.MethodName {

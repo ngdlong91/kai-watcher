@@ -2,10 +2,13 @@
 package cfg
 
 import (
-	"go.uber.org/zap"
+	"fmt"
+	"github.com/joho/godotenv"
 	"os"
 	"strconv"
 	"strings"
+
+	"go.uber.org/zap"
 )
 
 const (
@@ -24,9 +27,7 @@ type EnvConfig struct {
 	KardiaURLs         []string
 	KardiaTrustedNodes []string
 
-	StorageDriver  string
 	StorageURI     string
-	StorageDB      string
 	StorageMinConn int
 	StorageMaxConn int
 	StorageIsFlush bool
@@ -42,11 +43,21 @@ type EnvConfig struct {
 
 	// Telegram token
 	TelegramToken string
+	TelegramGroup int64
+
+	CronFetchDelegators string
 
 	Logger *zap.Logger
 }
 
+var serverMode = "dev"
+
 func Load() (EnvConfig, error) {
+	if serverMode == ModeProduction {
+		godotenv.Load()
+	} else {
+		godotenv.Load("dev.env")
+	}
 
 	var (
 		kardiaTrustedNodes []string
@@ -83,6 +94,14 @@ func Load() (EnvConfig, error) {
 		storageIsFLush = false
 	}
 
+	telegramGroupIDStr := os.Getenv("TELEGRAM_GROUP")
+	fmt.Println("Telegram group ID", telegramGroupIDStr)
+	telegramGroup, err := strconv.ParseInt(telegramGroupIDStr, 10, 64)
+	if err != nil {
+		fmt.Println("err", err.Error())
+		telegramGroup = 0
+	}
+
 	cfg := EnvConfig{
 		ServerMode: os.Getenv("SERVER_MODE"),
 		Port:       os.Getenv("PORT"),
@@ -94,9 +113,7 @@ func Load() (EnvConfig, error) {
 		KardiaURLs:         kardiaURLs,
 		KardiaTrustedNodes: kardiaTrustedNodes,
 
-		StorageDriver:  os.Getenv("STORAGE_DRIVER"),
 		StorageURI:     os.Getenv("STORAGE_URI"),
-		StorageDB:      os.Getenv("STORAGE_DB"),
 		StorageMinConn: storageMinConn,
 		StorageMaxConn: storageMaxConn,
 		StorageIsFlush: storageIsFLush,
@@ -110,6 +127,9 @@ func Load() (EnvConfig, error) {
 
 		SentryDSN:     os.Getenv("SENTRY_DNS"),
 		TelegramToken: os.Getenv("TELEGRAM_TOKEN"),
+		TelegramGroup: telegramGroup,
+
+		CronFetchDelegators: os.Getenv("CRON_FETCH_DELEGATORS"),
 	}
 
 	return cfg, nil
