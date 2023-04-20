@@ -3,8 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/ngdlong91/kai-watcher/external/alert"
+	"github.com/ngdlong91/kai-watcher/kclient"
+	"github.com/ngdlong91/kai-watcher/repo"
+	"github.com/ngdlong91/kai-watcher/utils"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -20,7 +25,44 @@ var (
 	logger *zap.Logger
 )
 
+func preload() {
+
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	tempCfg, err := cfg.Load()
+	if err != nil {
+		panic(err)
+	}
+	gCfg = tempCfg
+
+	alertCfg := alert.Config{
+		DSN:         gCfg.SentryDSN,
+		Environment: gCfg.ServerMode,
+	}
+	if err := alert.NewAlert(alertCfg); err != nil {
+		panic(err)
+	}
+
+	lgrCfg := utils.LoggerConfig{
+		ServerMode: gCfg.ServerMode,
+		LogLevel:   gCfg.LogLevel,
+	}
+	tempLgr, err := utils.NewLogger(lgrCfg)
+	if err != nil {
+		panic("cannot init logger")
+	}
+	logger = tempLgr.With(zap.String("services", "watcher"))
+	gCfg.Logger = logger
+
+}
+
 func main() {
+	preload()
+	defer func() {
+		if err := recover(); err != nil {
+			logger.Error("cannot recover")
+		}
+	}()
+
 	ctx := context.Background()
 
 	_, cancel := context.WithCancel(ctx)
@@ -34,14 +76,28 @@ func main() {
 		}
 	}()
 
+	fmt.Printf("Global config: %+v \n", gCfg)
+
 	pool, err := pgxpool.Connect(ctx, gCfg.StorageURI)
+	if err != nil {
+		fmt.Println("Err", err.Error())
+		panic(err)
+	}
+
+	node, err := kclient.NewNode(gCfg.KardiaTrustedNodes[0], gCfg.Logger)
 	if err != nil {
 		panic(err)
 	}
 
-	fetchDelegatorTask := tasks.FetchDelegators{
+	delegatorDB := &repo.Delegator{
+		Conn:   pool,
 		Logger: logger,
-		Pool:   pool,
+	}
+	fetchDelegatorTask := tasks.FetchDelegators{
+		Logger:      logger,
+		Node:        node,
+		DelegatorDB: delegatorDB,
+		Pool:        pool,
 	}
 
 	c := cron.New()

@@ -21,7 +21,7 @@ func TestCron_FetchDelegator(t *testing.T) {
 	task := &FetchDelegators{
 		Logger:      lgr,
 		Pool:        conn,
-		node:        node,
+		Node:        node,
 		DelegatorDB: delegatorRepo,
 	}
 

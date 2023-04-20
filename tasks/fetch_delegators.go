@@ -3,13 +3,13 @@ package tasks
 import (
 	"context"
 	"fmt"
-	"github.com/shopspring/decimal"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 
-	"github.com/ngdlong91/kai-watcher/kardia/client"
+	"github.com/ngdlong91/kai-watcher/kclient"
 	"github.com/ngdlong91/kai-watcher/types"
 	"github.com/ngdlong91/kai-watcher/utils"
 )
@@ -17,7 +17,7 @@ import (
 type FetchDelegators struct {
 	Logger      *zap.Logger
 	Pool        *pgxpool.Pool
-	node        *client.Node
+	Node        *kclient.Node
 	DelegatorDB interface {
 		DeleteAll(ctx context.Context) error
 		BulkInsert(ctx context.Context, records [][]interface{}) error
@@ -61,13 +61,13 @@ func (t *FetchDelegators) fetch() ([][]interface{}, error) {
 	var validatorSigners []string
 
 	ctx := context.Background()
-	validatorAddresses, err := t.node.ValidatorSMCAddresses(ctx, 0)
+	validatorAddresses, err := t.Node.ValidatorSMCAddresses(ctx, 0)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, addr := range validatorAddresses {
-		validator, err := t.node.APIValidatorInfo(ctx, addr.String())
+		validator, err := t.Node.APIValidatorInfo(ctx, addr.String())
 		if err != nil {
 			return nil, err
 		}
@@ -79,7 +79,7 @@ func (t *FetchDelegators) fetch() ([][]interface{}, error) {
 	delegatorMap := make(map[string]types.DelegatorInfo)
 	var delegatorList []string
 	for _, s := range validatorSigners {
-		validatorInfo, err := t.node.RPCValidator(ctx, s)
+		validatorInfo, err := t.Node.RPCValidator(ctx, s)
 		if err != nil {
 			return nil, err
 		}
@@ -118,7 +118,7 @@ func (t *FetchDelegators) fetch() ([][]interface{}, error) {
 	now := time.Now().Unix()
 	for _, dAddr := range delegatorList {
 		info := delegatorMap[dAddr]
-		balance, err := t.node.GetBalance(ctx, dAddr)
+		balance, err := t.Node.GetBalance(ctx, dAddr)
 		if err != nil {
 			return nil, err
 		}

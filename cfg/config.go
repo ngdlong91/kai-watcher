@@ -27,9 +27,7 @@ type EnvConfig struct {
 	KardiaURLs         []string
 	KardiaTrustedNodes []string
 
-	StorageDriver  string
 	StorageURI     string
-	StorageDB      string
 	StorageMinConn int
 	StorageMaxConn int
 	StorageIsFlush bool
@@ -115,9 +113,7 @@ func Load() (EnvConfig, error) {
 		KardiaURLs:         kardiaURLs,
 		KardiaTrustedNodes: kardiaTrustedNodes,
 
-		StorageDriver:  os.Getenv("STORAGE_DRIVER"),
 		StorageURI:     os.Getenv("STORAGE_URI"),
-		StorageDB:      os.Getenv("STORAGE_DB"),
 		StorageMinConn: storageMinConn,
 		StorageMaxConn: storageMaxConn,
 		StorageIsFlush: storageIsFLush,

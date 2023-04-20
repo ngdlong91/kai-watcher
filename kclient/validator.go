@@ -43,28 +43,16 @@ func (n *Node) APIValidatorInfo(ctx context.Context, validatorSMCAddress string)
 		lgr.Error("GetValidatorInfo KardiaCall error: ", zap.Error(err))
 		return nil, err
 	}
-	var valInfo RPCValidator
+	var valInfo types.RPCValidator
 	// unpack result
 	err = n.validatorSMC.Abi.UnpackIntoInterface(&valInfo, "inforValidator", res)
 	if err != nil {
 		lgr.Error("Error unpacking validator info: ", zap.Error(err))
 		return nil, err
 	}
-	validator := types.Validator{
-		Name:                  validatorName(valInfo.Name),
-		Signer:                strings.ToLower(valInfo.Signer.String()),
-		SMCAddress:            strings.ToLower(validatorSMCAddress),
-		Tokens:                valInfo.Tokens,
-		Jailed:                valInfo.Jailed,
-		DelegationShares:      valInfo.DelegationShares,
-		AccumulatedCommission: valInfo.AccumulatedCommission,
-		UbdEntryCount:         valInfo.UbdEntryCount,
-		UpdateTime:            valInfo.UpdateTime,
-		MinSelfDelegation:     valInfo.MinSelfDelegation,
-		Status:                valInfo.Status,
-		UnbondingTime:         valInfo.UnbondingTime,
-		UnbondingHeight:       valInfo.UnbondingHeight,
-	}
+
+	valInfo.ValStakingSmc = common.HexToAddress(validatorSMCAddress)
+	validator := valInfo.ToValidator()
 
 	return &validator, nil
 }
