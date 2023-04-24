@@ -4,6 +4,11 @@ package staking
 import (
 	"context"
 	"fmt"
+	"github.com/go-redis/redis/v8"
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/ngdlong91/kai-watcher/cache"
+	"github.com/ngdlong91/kai-watcher/entities"
+	"github.com/ngdlong91/kai-watcher/repo"
 	"strings"
 	"time"
 
@@ -17,7 +22,7 @@ import (
 	"github.com/ngdlong91/kai-watcher/utils"
 )
 
-type watcher struct {
+type Watcher struct {
 	node               *kclient.Node
 	alert              telegram.Client
 	currentBlockHeight uint64
@@ -25,9 +30,19 @@ type watcher struct {
 	lastFetch          int64
 	limit              decimal.Decimal
 	logger             *zap.Logger
+
+	WalletCache interface {
+		SetWallets(ctx context.Context, wallet string, name string) error
+		WalletName(ctx context.Context, wallet string) (string, error)
+	}
+
+	WalletRepo interface {
+		Insert(ctx context.Context, e *entities.Wallet) error
+		Retrieve(ctx context.Context, wallet string) (string, error)
+	}
 }
 
-func NewWatcher(cfg Config) (*watcher, error) {
+func NewWatcher(cfg Config) (*Watcher, error) {
 	node, err := kclient.NewNode(cfg.URL, cfg.Logger)
 	if err != nil {
 		return nil, err
@@ -45,7 +60,7 @@ func NewWatcher(cfg Config) (*watcher, error) {
 	if err != nil {
 		return nil, err
 	}
-	watcher := &watcher{
+	watcher := &Watcher{
 		node:   node,
 		alert:  alert,
 		limit:  limit,
@@ -64,10 +79,29 @@ func WatchStakingSMC(ctx context.Context, cfg cfg.EnvConfig, interval time.Durat
 		AlertTo:        cfg.TelegramGroup,
 		ValidatorLimit: cfg.ValidatorLimit,
 	}
+
 	watcher, err := NewWatcher(sCfg)
 	if err != nil {
 		lgr.Error("cannot create watcher", zap.Error(err))
 		panic(err)
+	}
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     cfg.CacheHost,
+		DB:       0,
+		Password: cfg.CachePassword,
+	})
+
+	watcher.WalletCache = &cache.Wallet{
+		Client: redisClient,
+		Logger: lgr,
+	}
+	pool, err := pgxpool.Connect(ctx, cfg.StorageURI)
+	if err != nil {
+		panic(err)
+	}
+	watcher.WalletRepo = &repo.Wallet{
+		Logger: lgr,
+		Pool:   pool,
 	}
 	lgr.Info("Start staking watcher")
 	t := time.NewTicker(interval)
@@ -84,7 +118,7 @@ func WatchStakingSMC(ctx context.Context, cfg cfg.EnvConfig, interval time.Durat
 	}
 }
 
-func (w *watcher) Run(ctx context.Context) error {
+func (w *Watcher) Run(ctx context.Context) error {
 	if w.lastFetch+600 < time.Now().Unix() {
 		validators, err := w.node.Validators(ctx)
 		if err != nil {
