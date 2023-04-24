@@ -2,7 +2,15 @@ package whale
 
 import (
 	"context"
+	"fmt"
+	"github.com/go-redis/redis/v8"
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/ngdlong91/kai-watcher/cache"
+	"github.com/ngdlong91/kai-watcher/entities"
 	"github.com/ngdlong91/kai-watcher/kclient"
+	"github.com/ngdlong91/kai-watcher/repo"
+	"github.com/ngdlong91/kai-watcher/types"
+	"strings"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -13,7 +21,7 @@ import (
 	"github.com/ngdlong91/kai-watcher/utils"
 )
 
-type watcher struct {
+type Watcher struct {
 	node               *kclient.Node
 	levelOneLimit      decimal.Decimal
 	levelTwoLimit      decimal.Decimal
@@ -22,6 +30,16 @@ type watcher struct {
 	alert              telegram.Client
 	currentBlockHeight uint64
 	logger             *zap.Logger
+
+	WalletCache interface {
+		SetWallets(ctx context.Context, wallet string, name string) error
+		WalletName(ctx context.Context, wallet string) (string, error)
+	}
+
+	WalletRepo interface {
+		Insert(ctx context.Context, e *entities.Wallet) error
+		Retrieve(ctx context.Context, wallet string) (string, error)
+	}
 }
 
 func WatchWhaleTransaction(ctx context.Context, cfg cfg.EnvConfig, interval time.Duration) {
@@ -41,6 +59,25 @@ func WatchWhaleTransaction(ctx context.Context, cfg cfg.EnvConfig, interval time
 		lgr.Error("cannot create watcher", zap.Error(err))
 		panic(err)
 	}
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     cfg.CacheHost,
+		DB:       0,
+		Password: cfg.CachePassword,
+	})
+
+	watcher.WalletCache = &cache.Wallet{
+		Client: redisClient,
+		Logger: lgr,
+	}
+	pool, err := pgxpool.Connect(ctx, cfg.StorageURI)
+	if err != nil {
+		panic(err)
+	}
+	watcher.WalletRepo = &repo.Wallet{
+		Logger: lgr,
+		Pool:   pool,
+	}
+
 	lgr.Info("Start whale alert watcher")
 	t := time.NewTicker(interval)
 	defer t.Stop()
@@ -58,7 +95,7 @@ func WatchWhaleTransaction(ctx context.Context, cfg cfg.EnvConfig, interval time
 	}
 }
 
-func NewWatcher(cfg Config) (*watcher, error) {
+func NewWatcher(cfg Config) (*Watcher, error) {
 	node, err := kclient.NewNode(cfg.URL, cfg.Logger)
 	if err != nil {
 		return nil, err
@@ -68,6 +105,7 @@ func NewWatcher(cfg Config) (*watcher, error) {
 		GroupID: cfg.AlertTo,
 		Logger:  cfg.Logger,
 	}
+
 	cfg.Logger.Info("Watcher", zap.Any("Config", cfg))
 	alert, err := telegram.NewClient(alertCfg)
 	if err != nil {
@@ -92,7 +130,7 @@ func NewWatcher(cfg Config) (*watcher, error) {
 	if err != nil {
 		return nil, err
 	}
-	watcher := &watcher{
+	watcher := &Watcher{
 		node:            node,
 		alert:           alert,
 		levelOneLimit:   levelOneLimit,
@@ -105,7 +143,7 @@ func NewWatcher(cfg Config) (*watcher, error) {
 	return watcher, nil
 }
 
-func (w *watcher) Run(ctx context.Context) error {
+func (w *Watcher) Run(ctx context.Context) error {
 	//todo: change get latest block number to subscribe newHeads event
 	lgr := w.logger
 	latestBlockNumber, err := w.node.LatestBlockNumber(ctx)
@@ -124,7 +162,7 @@ func (w *watcher) Run(ctx context.Context) error {
 
 	for _, tx := range block.Txs {
 		// Tx Value in decimal
-
+		w.getNames(ctx, tx)
 		txValue := utils.ToDecimal(tx.Value, 18)
 		var alertMsg string
 		if txValue.Cmp(w.levelFourLimit) >= 0 {
@@ -145,4 +183,42 @@ func (w *watcher) Run(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (w *Watcher) getNames(ctx context.Context, tx *types.Transaction) {
+	from := strings.ToLower(tx.From)
+	to := strings.ToLower(tx.To)
+	var fromName, toName string
+	var err error
+	fromName, err = w.WalletCache.WalletName(ctx, from)
+	if err != nil || fromName == "" {
+		fromName, err = w.WalletRepo.Retrieve(ctx, from)
+		if err != nil {
+			w.logger.Error("cannot get wallet name from db", zap.Error(err))
+			fromName = ""
+		} else {
+			if err := w.WalletCache.SetWallets(ctx, from, fromName); err != nil {
+				w.logger.Error("cannot set wallet", zap.Error(err))
+				fromName = ""
+			}
+		}
+	}
+	tx.FromName = fromName
+
+	toName, err = w.WalletCache.WalletName(ctx, to)
+	if err != nil || toName == "" {
+		toName, err = w.WalletRepo.Retrieve(ctx, to)
+		if err != nil {
+			w.logger.Error("cannot get wallet name from db", zap.Error(err))
+			toName = ""
+		} else {
+			if err := w.WalletCache.SetWallets(ctx, to, toName); err != nil {
+				w.logger.Error("cannot set wallet", zap.Error(err))
+				fromName = ""
+			}
+		}
+	}
+	tx.ToName = toName
+
+	fmt.Printf("TX: %+v \n", tx)
 }

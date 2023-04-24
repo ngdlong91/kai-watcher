@@ -18,7 +18,9 @@ type Transaction struct {
 
 	Hash             string        `json:"hash" bson:"hash"`
 	From             string        `json:"from" bson:"from"`
+	FromName         string        `json:"from_name"`
 	To               string        `json:"to" bson:"to"`
+	ToName           string        `json:"to_name"`
 	Status           uint          `json:"status" bson:"status"`
 	ContractAddress  string        `json:"contractAddress" bson:"contractAddress"`
 	Value            string        `json:"value" bson:"value"`

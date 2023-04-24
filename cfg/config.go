@@ -32,6 +32,9 @@ type EnvConfig struct {
 	StorageMaxConn int
 	StorageIsFlush bool
 
+	CacheHost     string
+	CachePassword string
+
 	LevelOneLimit   string
 	LevelTwoLimit   string
 	LevelThreeLimit string
@@ -117,6 +120,9 @@ func Load() (EnvConfig, error) {
 		StorageMinConn: storageMinConn,
 		StorageMaxConn: storageMaxConn,
 		StorageIsFlush: storageIsFLush,
+
+		CacheHost:     os.Getenv("CACHE_HOST"),
+		CachePassword: os.Getenv("CACHE_PASSWORD"),
 
 		LevelOneLimit:   os.Getenv("LEVEL_ONE_LIMIT"),
 		LevelTwoLimit:   os.Getenv("LEVEL_TWO_LIMIT"),
