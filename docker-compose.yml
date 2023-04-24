@@ -25,5 +25,5 @@ services:
     container_name: watcher-redis
     image: redis:latest
     command: /bin/sh -c "redis-server --requirepass 123456"
-    #ports:
-    #  - 6379:6379
+    ports:
+      - 6379:6379
